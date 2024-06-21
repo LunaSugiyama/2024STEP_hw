@@ -4,19 +4,19 @@ import math
 
 from common import read_input
 
-CHALLENGES = 7
-
+CHALLENGES = 8
 
 def distance(city1, city2):
     return math.sqrt((city1[0] - city2[0]) ** 2 + (city1[1] - city2[1]) ** 2)
 
 
 def verify_output():
-    for challenge_number in range(CHALLENGES):
+    for challenge_number in range(6, CHALLENGES):
         print(f'Challenge {challenge_number}')
         cities = read_input(f'input_{challenge_number}.csv')
         N = len(cities)
-        for output_prefix in ('output', 'sample/random', 'sample/greedy', 'sample/sa', 'sample/genetics'):
+        for output_prefix in ('sample/3opt', 'sample/greedy'):
+        # for output_prefix in ('output', 'sample/genetics', 'sample/greedy'):
             output_file = f'{output_prefix}_{challenge_number}.csv'
             with open(output_file) as f:
                 lines = f.readlines()

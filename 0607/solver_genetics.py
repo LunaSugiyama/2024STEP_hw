@@ -3,21 +3,25 @@
 import sys
 import math
 import random
+from copy import deepcopy
 
 from common import print_tour, read_input
 
+# Distance Memoization dictionary
+distance_cache = {}
+
 def distance(city1, city2):
-    return math.sqrt((city1[0] - city2[0]) ** 2 + (city1[1] - city2[1]) ** 2)
+    key = tuple(sorted((city1, city2)))
+    if key not in distance_cache:
+        distance_cache[key] = math.sqrt((city1[0] - city2[0]) ** 2 + (city1[1] - city2[1]) ** 2)
+    return distance_cache[key]
 
 def total_distance(tour, cities):
     N = len(tour)
-    return sum(distance(cities[tour[i]], cities[tour[(i + 1) % N]]) for i in range(N))
+    return sum(distance(cities[tour[i]], cities[tour[(i + 1) % N]] ) for i in range(N))
 
-def mutate(tour):
-    new_tour = tour.copy()
-    i, j = sorted(random.sample(range(len(tour)), 2))
-    new_tour[i:j+1] = reversed(new_tour[i:j+1])
-    return new_tour
+def mutate(tour, cities):
+    return two_opt(deepcopy(tour), cities)
 
 def crossover(tour1, tour2):
     N = len(tour1)
@@ -34,30 +38,61 @@ def crossover(tour1, tour2):
 
     return child
 
+def two_opt(tour, cities):
+    N = len(tour)
+    while True:
+        improved = False
+        for i in range(N):
+            for j in range(i + 2, N):
+                if j - i == 1:
+                    continue
+                # Original distances
+                d1 = distance(cities[tour[i]], cities[tour[(i + 1) % N]])
+                d2 = distance(cities[tour[j]], cities[tour[(j + 1) % N]])
+                # New distances after swap
+                d3 = distance(cities[tour[i]], cities[tour[j]])
+                d4 = distance(cities[tour[(i + 1) % N]], cities[tour[(j + 1) % N]])
+                if d1 + d2 > d3 + d4:
+                    tour[i+1:j+1] = reversed(tour[i+1:j+1])
+                    improved = True
+        if not improved:
+            break
+    return tour
+
 def initialize_population(cities, population_size):
     return [random.sample(range(len(cities)), len(cities)) for _ in range(population_size)]
 
+def tournament_selection(population, cities, k=5):
+    selected = random.sample(population, k)
+    selected = sorted(selected, key=lambda tour: total_distance(tour, cities))
+    return selected[0]
+
 def solve(cities):
-    population_size = 100
+    population_size = 10
     num_generations = 1000
     num_elites = 10
-    mutation_rate = 0.1
+    mutation_rate = 1.0
     
     population = initialize_population(cities, population_size)
     
     for generation in range(num_generations):
         population = sorted(population, key=lambda tour: total_distance(tour, cities))
-        new_population = population[:num_elites]
+        new_population = deepcopy(population[:num_elites])
         
         while len(new_population) < population_size:
-            parent1, parent2 = random.sample(population[:50], 2)
-            child = crossover(parent1, parent2)
+            parent1 = tournament_selection(population, cities)
+            parent2 = tournament_selection(population, cities)
+            child = crossover(deepcopy(parent1), deepcopy(parent2))
             if random.random() < mutation_rate:
-                child = mutate(child)
+                child = mutate(child, cities)
             new_population.append(child)
         
         population = new_population
-
+        
+        # Print the total distance of the best tour in the current generation
+        best_tour = min(population, key=lambda tour: total_distance(tour, cities))
+        print(f'Generation {generation + 1}: Total Distance = {total_distance(best_tour, cities)}')
+    
     best_tour = min(population, key=lambda tour: total_distance(tour, cities))
     return best_tour
 
