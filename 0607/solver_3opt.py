@@ -22,7 +22,33 @@ def solve(cities):
     N = len(cities)
     tour = list(range(N))
     random.shuffle(tour)
+    tour = two_opt(tour, cities)
     return three_opt(tour, cities)
+
+def two_opt(tour, cities):
+    def reverse_segment_if_better(tour, i, j):
+        """If reversing tour[i:j] would make the tour shorter, then do it."""
+        # Given tour [...A-B...C-D...], consider reversing B...C to get [...A-C...B-D...]
+        A, B, C, D = tour[i], tour[(i + 1) % N], tour[j], tour[(j + 1) % N]
+        d0 = distance(cities[A], cities[B]) + distance(cities[C], cities[D])
+        d1 = distance(cities[A], cities[C]) + distance(cities[B], cities[D])
+        if d0 > d1:
+            tour[i+1:j+1] = reversed(tour[i+1:j+1])
+            return True
+        return False
+
+    N = len(tour)
+    while True:
+        improved = False
+        for i in range(N):
+            for j in range(i + 2, N):
+                if j - i == 1:
+                    continue
+                if reverse_segment_if_better(tour, i, j):
+                    improved = True
+        if not improved:
+            break
+    return tour
 
 def three_opt(tour, cities, num_attempts=100000):
     def reverse_segment_if_better(tour, i, j, k):
