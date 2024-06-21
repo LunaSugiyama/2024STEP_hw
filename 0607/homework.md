@@ -11,3 +11,12 @@ challenge:6
 challenge:7
 3opt: 99709.99
 ```
+
+* I combined 3 opt and 2 opt which gave me a slightly better result
+```
+challenge:6
+3&2opt: 45371.21
+
+challenge:7
+3&2opt: 91419.43
+```
